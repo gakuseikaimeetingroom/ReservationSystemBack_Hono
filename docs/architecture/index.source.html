@@ -1,0 +1,185 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ReservationSystem ｜ システム全体 | ReservationSystem</title><style>
+/* engineered-paper theme (cool near-white, one accent, mono labels)
+ * All colors/fonts flow through the :root tokens — tweak tokens, not scattered values. */
+:root {
+  color-scheme: light;
+  --color-paper:   oklch(98.5% 0.004 250);
+  --color-paper-2: oklch(96.5% 0.005 252);
+  --color-rule:    oklch(93% 0.007 255);    /* graph-paper grid */
+  --color-rule-2:  oklch(83% 0.011 255);    /* hairline borders */
+  --color-muted:   oklch(56% 0.013 255);
+  --color-neutral: oklch(46% 0.015 255);    /* neutral edges */
+  --color-ink-2:   oklch(34% 0.018 257);
+  --color-ink:     oklch(24% 0.020 258);
+  --color-accent:  oklch(58% 0.20 256);     /* primary-flow edges, one signal color */
+  --color-graphite:oklch(24% 0.018 260);    /* dark tile for white/light logos */
+  /* group palette A — warm vendor (e.g. Cloudflare/AWS orange). Retune hue per vendor. */
+  --color-g1:      oklch(68% 0.15 55);
+  --color-g1-soft: oklch(78% 0.12 55);
+  --color-g1-ink:  oklch(52% 0.14 50);
+  --color-g1-tint: oklch(96.5% 0.015 60 / .5);
+  /* group palette B — accent-family (repo/tooling groups) */
+  --color-accent-soft: oklch(58% 0.20 256 / .45);
+  --color-accent-tint: oklch(97% 0.012 256 / .5);
+  /* JP glyphs: name JP faces explicitly — bare sans-serif fallback on Linux picks Chinese-variant CJK */
+  --font-display: "Geist", "Hiragino Sans", "Yu Gothic UI", "Noto Sans CJK JP", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Hiragino Sans", "Yu Gothic UI", "Noto Sans CJK JP", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --space-xs: 4px; --space-sm: 8px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px;
+  --radius-card: 10px; --radius-tile: 12px;
+  /* translucent veil behind node label text: matches paper on plain canvas, blends into
+     group tints instead of punching an off-color rectangle through them */
+  --color-veil: oklch(98.5% 0.004 250 / .78);
+}
+/* Dark variant: set data-theme="dark" on <html>. Tiles stay white — brand logos are drawn
+   for light grounds. Everything (arrowheads via context-stroke, legend via border-color)
+   follows the tokens, so toggling the attribute is all it takes. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper:   oklch(18% 0.012 255);
+  --color-paper-2: oklch(22% 0.014 255);
+  --color-rule:    oklch(24% 0.013 255);
+  --color-rule-2:  oklch(38% 0.018 255);
+  --color-muted:   oklch(65% 0.014 255);
+  --color-neutral: oklch(72% 0.012 255);
+  --color-ink-2:   oklch(85% 0.010 255);
+  --color-ink:     oklch(94% 0.008 255);
+  --color-accent:  oklch(70% 0.16 256);
+  --color-graphite:oklch(31% 0.020 260);
+  --color-g1:      oklch(70% 0.14 55);
+  --color-g1-soft: oklch(58% 0.11 55);
+  --color-g1-ink:  oklch(78% 0.12 55);
+  --color-g1-tint: oklch(26% 0.030 60 / .40);
+  --color-accent-soft: oklch(70% 0.16 256 / .5);
+  --color-accent-tint: oklch(28% 0.045 256 / .35);
+  --color-veil: oklch(18% 0.012 255 / .78);
+}
+@font-face { font-family:"Geist"; font-style:normal; font-weight:100 900; font-display:swap;
+  src:url(data:font/woff2;base64,%%FONT_DISPLAY%%) format("woff2"); }
+@font-face { font-family:"JetBrains Mono"; font-style:normal; font-weight:100 800; font-display:swap;
+  src:url(data:font/woff2;base64,%%FONT_JBM%%) format("woff2"); }
+/* JetBrains Mono reads cramped at 9.5–11px; open every mono label slightly */
+.kicker, .node .role, .el, .legend, .foot { letter-spacing: 0.04em; }
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { overflow-x: clip; }
+body { background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); padding: var(--space-xl) var(--space-lg) var(--space-2xl); }
+.page { width: fit-content; max-width: 100%; margin: 0 auto; }
+
+.head { display:grid; grid-template-columns: 1fr auto; gap: var(--space-lg); align-items:end;
+  padding-bottom: var(--space-md); border-bottom: 1px solid var(--color-rule-2); margin-bottom: var(--space-lg); }
+.kicker { font-family: var(--font-mono); font-size: 11px;
+  color: var(--color-accent); margin-bottom: var(--space-sm); }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 4vw, 30px);
+  letter-spacing: -0.005em; line-height: 1.2; }
+.lede { max-width: 300px; font-size: 12px; line-height: 1.7; color: var(--color-neutral); padding-bottom: 2px; }
+@media (max-width: 680px) { .head { grid-template-columns: 1fr; align-items:start; } .lede { max-width:none; } }
+
+.scroller { overflow-x: auto; border: 1px solid var(--color-rule-2); border-radius: var(--radius-card); }
+/* CANVAS SIZE: set width/height here AND on svg.edges AND its viewBox — keep the three in sync */
+.canvas { position: relative; width: 1000px; height: 540px; background: var(--color-paper);
+  background-image:
+    linear-gradient(var(--color-rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-rule) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px; }
+
+.group { position:absolute; border-radius: var(--radius-tile); }
+/* group labels are names like node names (display font), written in the brand's own case.
+   They sit inside the top-left corner, so the border stays unbroken and needs no mask */
+.g-label { position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:6px;
+  font-family: var(--font-display); font-size: 12px; font-weight: 600;
+  color: var(--color-neutral); white-space: nowrap; }
+.g-label img { width: 14px; height: 14px; }
+/* group labels sit on the group's tint, not on a white tile: in the dark theme swap in the brand's own
+   dark-theme logo (lt/dk pair), or give a mark with black parts a white plate */
+.g-label img.dk, .tile img.dk { display:none; }
+[data-theme="dark"] .g-label img.lt, [data-theme="dark"] .tile img.lt { display:none; }
+[data-theme="dark"] .g-label img.dk, [data-theme="dark"] .tile img.dk { display:block; }
+[data-theme="dark"] .g-label img.plate { background:#fff; border-radius:3px; padding:2px; width:18px; height:18px; }
+.group.ga { border:1.5px solid var(--color-g1); background: var(--color-g1-tint); }
+.group.ga-nested { border:1.5px dashed var(--color-g1-soft); }
+.group.gb { border:1.5px solid var(--color-accent-soft); background: var(--color-accent-tint); }
+.group.ga > .g-label, .group.ga-nested > .g-label { color: var(--color-g1-ink); }
+.group.gb > .g-label { color: var(--color-accent); }
+.group.aws { border:1.5px solid var(--color-ink); border-radius:0; }
+.group.aws > .g-label { top:-1.5px; left:-1.5px; gap:8px; color: var(--color-ink); }
+.group.aws > .g-label img { width:30px; height:30px; }
+.group.aws.az > .g-label { top:8px; left:12px; }
+.group.aws.region, .group.aws.az { border-color:#00A4A6; border-style:dashed; }
+.group.aws.vpc { border-color:#8C4FFF; }
+.group.aws.private { border-color:#00A4A6; }
+.group.aws.public { border-color:#7AA116; }
+.group.gcp { border:1.5px solid #4285F4; border-radius:6px; }
+.group.azure { border:1.5px solid #0078D4; border-radius:6px; }
+.group.gcp > .g-label, .group.azure > .g-label { gap:8px; color: var(--color-ink); }
+.group.gcp > .g-label img, .group.azure > .g-label img { width:20px; height:20px; }
+.group.gcp.region, .group.azure.region { border-color: var(--color-rule-2); background: var(--color-paper-2); }
+.group.gcp.vpc { border:1.5px dashed var(--color-ink-2); }
+.group.gcp.subnet { border:1px dashed var(--color-neutral); }
+.group.gcp.zone { border-color:#34A853; }
+.group.azure.rg { border:1.5px dashed #0096D7; }
+.group.azure.vnet { border:1.5px solid #A4CBFB; }
+.group.azure.subnet { border:1px solid #A4CBFB; }
+.group.azure.zone { border-color:#FFD965; }
+
+.node { position:absolute; width:132px; text-align:center; }
+.tile { width:60px; height:60px; margin:0 auto; border-radius: var(--radius-tile);
+  background:#fff; border:1px solid var(--color-rule-2); display:grid; place-items:center;
+  box-shadow: 0 1px 2px oklch(24% 0.02 258 / 0.05); transition: border-color .15s cubic-bezier(0.16,1,0.3,1); }
+.node:hover .tile { border-color: var(--color-accent); }
+.tile img { width:34px; height:34px; object-fit:contain; }
+.tile.wide img { width:44px; }                       /* wide-aspect logos */
+.tile.dark { background: var(--color-graphite); border-color: var(--color-graphite); }  /* white/light logos */
+.tile.bare { background:none; border:none; box-shadow:none; }
+.tile.bare img { width:60px; height:60px; }
+.tile.bare.res img { width:44px; height:44px; }
+.node .name { font-family: var(--font-display); font-weight:600; font-size:13px; margin-top: var(--space-sm); letter-spacing:0; }
+.node .role { font-family: var(--font-mono); font-size:9.5px; color: var(--color-muted); margin-top:2px; }
+/* veil behind label spans: crossing edges/grid fade behind text; translucent so it
+   blends into group tints (a solid paper rectangle looks pasted-on inside tinted groups) */
+.node .name span, .node .role span { background: var(--color-veil); backdrop-filter: blur(1.5px);
+  padding: 0 var(--space-xs); border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+
+svg.edges { position:absolute; inset:0; width:1000px; height:540px; pointer-events:none; }
+.e  { stroke: var(--color-accent); stroke-width:1.6; fill:none; }   /* primary flow */
+.n  { stroke: var(--color-neutral); stroke-width:1.4; fill:none; }  /* internal */
+path.aws { stroke: var(--color-ink); stroke-width:1.6; fill:none; }
+.dash { stroke-dasharray:4 5; }                                     /* dev / deploy */
+.el { font-family: var(--font-mono); font-size:10.5px; fill: var(--color-neutral);
+  paint-order: stroke; stroke: var(--color-paper); stroke-width:4px; stroke-linejoin:round; }  /* halo */
+.el.a { fill: var(--color-accent); }
+
+.legend { display:flex; gap: var(--space-lg); align-items:center; margin-top: var(--space-md);
+  font-family: var(--font-mono); font-size:10px; color: var(--color-muted); flex-wrap:wrap; }
+.legend .sw { display:inline-block; width:30px; vertical-align:middle; margin-right:6px;
+  border-top:1.6px solid var(--color-accent); }
+.legend .sw.n { border-color: var(--color-neutral); border-top-width:1.4px; }
+.legend .sw.dash { border-top-style: dashed; }
+
+.foot { margin-top: var(--space-xl); padding-top: var(--space-md); border-top: 1px solid var(--color-rule-2);
+  display:flex; justify-content:space-between; gap: var(--space-md); flex-wrap:wrap;
+  font-family: var(--font-mono); font-size:10px; color: var(--color-muted); }
+.foot a { color: inherit; text-decoration-color: var(--color-rule-2); text-underline-offset: 2px; }
+.foot a:hover { color: var(--color-accent); }
+
+.canvas,svg.edges{width:1440px;height:910px}
+.canvas-title{position:absolute;left:32px;top:24px;font:700 24px var(--font-display)}
+.canvas-sub{position:absolute;left:32px;top:59px;font:12px var(--font-body);color:var(--color-muted)}
+.node .name{font-size:14px}.node .role{font-family:var(--font-body);font-size:11px;line-height:1.6}
+.g-label{font-size:13px}.el{font-family:var(--font-body);font-size:12px}
+.note{position:absolute;font:12px/1.8 var(--font-body);color:var(--color-neutral)}
+.tag{font:11px var(--font-mono);color:var(--color-muted)}
+.details{max-width:1440px;margin-top:24px;padding:24px;background:var(--color-paper-2);border:1px solid var(--color-rule-2);border-radius:10px;font:13px/1.9 var(--font-body)}
+.details h2{font-size:16px;margin:16px 0 8px}.details h2:first-child{margin-top:0}
+.details code{font-family:var(--font-mono);font-size:12px}
+.toolbar{display:flex;gap:12px;margin-bottom:16px;align-items:center;font-size:13px}
+.toolbar a{color:var(--color-accent)}
+button{font:inherit;padding:7px 14px;border:1px solid var(--color-rule-2);border-radius:6px;background:var(--color-paper-2);color:var(--color-ink);cursor:pointer}
+</style></head><body><main class="page">
+    <div class="toolbar"><a href="index.html">システム全体</a><a href="structure.html">コード構造</a><button type="button" onclick="document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'">ライト / ダーク</button></div>
+    <div class="scroller"><div class="canvas" role="img" aria-label="ReservationSystem ｜ システム全体。実装から確認した通信経路 · React + Hono + Prisma + PostgreSQL + Supabase Storage"><div class="canvas-title">ReservationSystem ｜ システム全体</div><div class="canvas-sub">実装から確認した通信経路 · React + Hono + Prisma + PostgreSQL + Supabase Storage</div>
+    <div class="group gb" style="left:30px;top:110px;width:460px;height:340px"><div class="g-label"><img class="plate" src="%%ICON_react%%" alt="">ブラウザ / ReservationSystem</div></div><div class="group gb" style="left:550px;top:110px;width:490px;height:545px"><div class="g-label"><img class="plate" src="%%ICON_nodejs%%" alt="">Node.js / ReservationSystemBack_Hono</div></div><div class="group ga" style="left:1120px;top:110px;width:290px;height:545px"><div class="g-label">データ・外部サービス</div></div><div class="group gb" style="left:30px;top:700px;width:730px;height:170px"><div class="g-label"><img class="plate" src="%%ICON_typescript%%" alt="">開発ツール（本番の通信経路とは別）</div></div><div class="group gb" style="left:810px;top:700px;width:600px;height:170px"><div class="g-label"><img class="plate" src="%%ICON_github%%" alt="">定期メンテナンス</div></div><svg class="edges" viewBox="0 0 1440 910" aria-hidden="true"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke"/></marker></defs><path class="e" d="M164 220 H336" marker-end="url(#ar)"/><text class="el a" x="250" y="208" text-anchor="middle">操作</text><path class="e" d="M404 220 H646" marker-end="url(#ar)"/><text class="el a" x="525" y="208" text-anchor="middle">HTTP API</text><path class="e" d="M714 220 H896" marker-end="url(#ar)"/><text class="el a" x="805" y="208" text-anchor="middle">DB操作</text><path class="e" d="M964 220 H1231" marker-end="url(#ar)"/><text class="el a" x="1100" y="208" text-anchor="middle">SQL</text><path class="n" d="M680 302 V404" marker-end="url(#ar)"/><text class="el " x="747" y="350" text-anchor="middle">login / verify</text><path class="n" d="M800 220 V440 H896" marker-end="url(#ar)"/><path class="n" d="M930 404 V302" marker-end="url(#ar)"/><text class="el " x="977" y="350" text-anchor="middle">Prisma利用</text><path class="n" d="M964 440 H1231" marker-end="url(#ar)"/><text class="el " x="1100" y="428" text-anchor="middle">画像保存・一覧</text><path class="n" d="M370 302 V514" marker-end="url(#ar)"/><text class="el " x="433" y="489" text-anchor="middle">管理画面から開く</text><path class="n dash" d="M994 785 H1231" marker-end="url(#ar)"/><text class="el " x="1120" y="770" text-anchor="middle">POST /rest/v1/rpc/keep_alive</text></svg><div class="node" style="left:50.0px;top:190px;width:160px"><div class="tile"><img src="%%ICON_browser%%" alt=""></div><div class="name"><span>利用者 / 管理者</span></div><div class="role"><span>予約・返却 / 予約管理</span></div></div><div class="node" style="left:290.0px;top:190px;width:160px"><div class="tile"><img src="%%ICON_react%%" alt=""></div><div class="name"><span>React 19</span></div><div class="role"><span>Chakra UI 3 / Router 7</span></div></div><div class="node" style="left:600.0px;top:190px;width:160px"><div class="tile"><img src="%%ICON_hono%%" alt=""></div><div class="name"><span>Hono API</span></div><div class="role"><span>予約・認証・画像受付</span></div></div><div class="node" style="left:850.0px;top:190px;width:160px"><div class="tile"><img src="%%ICON_prisma%%" alt=""></div><div class="name"><span>Prisma 6</span></div><div class="role"><span>Reservationモデル</span></div></div><div class="node" style="left:1185.0px;top:190px;width:160px"><div class="tile"><img src="%%ICON_postgresql%%" alt=""></div><div class="name"><span>PostgreSQL</span></div><div class="role"><span>DB配置先は未確認</span></div></div><div class="node" style="left:600.0px;top:410px;width:160px"><div class="tile"><img src="%%ICON_auth%%" alt=""></div><div class="name"><span>JWT認証</span></div><div class="role"><span>jose / bcrypt</span></div></div><div class="node" style="left:850.0px;top:410px;width:160px"><div class="tile"><img src="%%ICON_calendar%%" alt=""></div><div class="name"><span>予約ルート</span></div><div class="role"><span>作成・承認・返却・削除</span></div></div><div class="node" style="left:1185.0px;top:410px;width:160px"><div class="tile"><img src="%%ICON_supabase%%" alt=""></div><div class="name"><span>Supabase Storage</span></div><div class="role"><span>返却画像 / 公開URL</span></div></div><div class="node" style="left:260.0px;top:520px;width:220px"><div class="tile"><img src="%%ICON_mail%%" alt=""></div><div class="name"><span>メール作成画面</span></div><div class="role"><span>Gmail / mailto → 手動送信</span></div></div><div class="node" style="left:90.0px;top:755px;width:160px"><div class="tile"><img src="%%ICON_vite%%" alt=""></div><div class="name"><span>Vite 6</span></div><div class="role"><span>開発 :5174 / dist/</span></div></div><div class="node" style="left:390.0px;top:755px;width:160px"><div class="tile"><img src="%%ICON_typescript%%" alt=""></div><div class="name"><span>TypeScript</span></div><div class="role"><span>画面・APIの型定義</span></div></div><div class="node" style="left:860.0px;top:755px;width:200px"><div class="tile"><img src="%%ICON_github%%" alt=""></div><div class="name"><span>GitHub Actions</span></div><div class="role"><span>毎日 09:00 JST</span></div></div><div class="node" style="left:1165.0px;top:755px;width:200px"><div class="tile"><img src="%%ICON_supabase%%" alt=""></div><div class="name"><span>Supabase RPC</span></div><div class="role"><span>keep_alive</span></div></div><div class="note" style="left:56px;top:346px;width:405px">予約作成 → 確認 → 完了 / キャンセル / 返却<br>管理画面：一覧・詳細・承認・却下・完了<br>API接続先：VITE_BACKEND_URL</div><div class="note" style="left:574px;top:555px;width:440px">入口：src/server.ts → src/index.ts<br>/api/reservations · /api/auth · /upload<br>予約APIの管理者認可は現状TODO（JWT検証は認証ルート）</div><div class="note" style="left:1140px;top:555px;width:250px">画像はAPI経由で保存。<br>管理画面は公開URLを参照。<br>DBのホストはDATABASE_URLで設定。</div><div class="note" style="left:44px;top:635px;width:460px">配置先：フロント・APIとも未確認。<br>Renderへの言及はコメントのみで、デプロイ設定は未確認。</div></div></div>
+    <div class="legend"><span><span class="sw"></span>主要な呼び出し</span><span><span class="sw n"></span>補助処理・参照</span><span><span class="sw n dash"></span>開発・定期処理</span></div>
+    <section class="details"><h2>図の読み方</h2><p>ReactアプリがHonoのHTTP APIを呼び出し、予約データはPrisma経由でPostgreSQLへ保存します。返却画像はHonoからSupabase Storageへアップロードし、その公開URLを予約レコードに保存します。認証は独自の管理者ログインとJWTで、Supabase Authの呼び出しは確認できません。</p>
+<h2>確認できた処理と、未確認の境界</h2><p>メールは管理画面でGmailまたはメールアプリの作成画面を開きます。Resendは依存関係にありますが、送信処理での使用は確認できません。GitHub ActionsはSupabaseのkeep_alive RPCを定期実行し、空コミットをpushする設定です。デプロイ用CIは確認できません。PostgreSQLとSupabase RPCが同じDBを指すかは、ソースだけでは確定できません。</p>
+<h2>ソース上の接続に関する補足</h2><p>ブラウザのJWT送信と、サーバーの管理者認可は別です。予約ルートでは認可がTODOのままです。また返却フォームの送信キー <code>damageDetails / returnImages</code> と、APIの受信キー <code>damage_details / return_images</code> が一致していません。この図はコード上の処理経路を示し、結合動作の成功を保証するものではありません。</p>
+<h2>主な根拠</h2><p><code>ReservationSystem/src/main.tsx</code>、<code>src/app/router/AppRoutes.tsx</code>、<code>src/lib/functions.ts</code>、<code>src/features/auth/hooks/useAuth.tsx</code>、<code>src/features/admin/hooks/useReservationActions.ts</code>、<code>ReservationSystemBack_Hono/src/index.ts</code>、<code>src/routes/*.ts</code>、<code>prisma/schema.prisma</code>、<code>.github/workflows/keep_alive.yml</code>。</p></section><footer class="foot"><span>ReservationSystem · ソース確認日 2026-11-03 · 稼働環境は未検証</span><span>icons: svgl / Lucide · made with <a href="https://github.com/caru-ini/stack-diagram" target="_blank" rel="noopener">stack-diagram</a></span></footer></main></body></html>
